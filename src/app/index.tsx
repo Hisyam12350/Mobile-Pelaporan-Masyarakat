@@ -1,98 +1,207 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Pressable,
+  Dimensions,
+  StatusBar,
+  ActivityIndicator,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { AntDesign } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+const { width } = Dimensions.get("window");
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
+export default function LandingPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem("token");
+      const role = await AsyncStorage.getItem("role");
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      if (role === "admin") {
+        router.replace("/admin/home");
+      } else if (role === "super admin") {
+        router.replace("/superAdmin/home");
+      } else {
+        router.replace("/(tabs)/home");
+      }
+    };
+
+    checkToken();
+  }, []);
+
+  const handleGetStarted = () => {
+    // Memastikan path mengarah ke folder (tabs) dengan benar
+    router.replace("/login");
+  };
+
+  if (loading) {
     return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#F0F9FF",
+        }}
+      >
+        <ActivityIndicator size="large" color="#06B6D4" />
+      </View>
     );
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <SafeAreaView style={styles.container}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#F0F9FF",
+        }}
+      >
+        <ActivityIndicator size="large" color="#06B6D4" />
+      </View>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+      {/* 1. Bagian Atas: Logo */}
+      <View style={styles.header}>
+        <View style={styles.logoBadge}>
+          <AntDesign name={"rocket1" as any} size={20} color="#06B6D4" />
+        </View>
+        <Text style={styles.brandName}>SistemPengaduan</Text>
+      </View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+      {/* 2. Bagian Tengah: Ilustrasi */}
+      <View style={styles.heroContainer}>
+        <View style={styles.illustrationCircle}>
+          <AntDesign
+            name={"customerservice" as any}
+            size={80}
+            color="#06B6D4"
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        </View>
+      </View>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      {/* 3. Bagian Bawah: Teks & Tombol */}
+      <View style={styles.contentContainer}>
+        <Text style={styles.title}>
+          Laporkan Masalah di Sekitarmu dengan Mudah
+        </Text>
+
+        <Text style={styles.subtitle}>
+          Suarakan aspirasi dan aduan Anda langsung kepada petugas. Pantau
+          prosesnya secara real-time hingga selesai.
+        </Text>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.ctaButton,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={handleGetStarted}
+        >
+          <Text style={styles.ctaButtonText}>Mulai Laporkan</Text>
+          <AntDesign
+            name={"arrowright" as any}
+            size={18}
+            color="#FFFFFF"
+            style={{ marginLeft: 8 }}
+          />
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    backgroundColor: "#FFFFFF",
+    justifyContent: "space-between",
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingTop: 16,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoBadge: {
+    backgroundColor: "#ECFEFF",
+    padding: 8,
+    borderRadius: 12,
+    marginRight: 10,
+  },
+  brandName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  heroContainer: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  illustrationCircle: {
+    width: width * 0.5,
+    height: width * 0.5,
+    borderRadius: (width * 0.5) / 2,
+    backgroundColor: "#ECFEFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contentContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
   title: {
-    textAlign: 'center',
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#0F172A",
+    textAlign: "center",
+    lineHeight: 36,
+    marginBottom: 12,
   },
-  code: {
-    textTransform: 'uppercase',
+  subtitle: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 32,
+    paddingHorizontal: 12,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  ctaButton: {
+    backgroundColor: "#06B6D4",
+    flexDirection: "row",
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#06B6D4",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  ctaButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  buttonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
 });

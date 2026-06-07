@@ -5,27 +5,32 @@ import {
   TabSlot,
   TabTriggerSlotProps,
   TabListProps,
-} from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
-
-import { ExternalLink } from './external-link';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+} from "expo-router/ui";
+import { AntDesign } from "@expo/vector-icons";
+import { Pressable, View, StyleSheet } from "react-native";
+import { ThemedText } from "./themed-text";
+import { ThemedView } from "./themed-view";
+import { Spacing } from "@/constants/theme";
 
 export default function AppTabs() {
   return (
     <Tabs>
-      <TabSlot style={{ height: '100%' }} />
+      <TabSlot style={{ height: "100%" }} />
       <TabList asChild>
         <CustomTabList>
-          <TabTrigger name="home" href="/" asChild>
-            <TabButton>Home</TabButton>
+          {/* TAB HOME (Kiri) */}
+          <TabTrigger name="home" href="/home" asChild>
+            <TabButton iconName="home">Home</TabButton>
           </TabTrigger>
-          <TabTrigger name="explore" href="/explore" asChild>
-            <TabButton>Explore</TabButton>
+
+          {/* TAB TAMBAH/PLUS (Tengah) */}
+          <TabTrigger name="tambah-laporan" href="/tambah-laporan" asChild>
+            <CenterAddButton iconName="plus" />
+          </TabTrigger>
+
+          {/* TAB PROFILE (Kanan) */}
+          <TabTrigger name="profile" href="/profile" asChild>
+            <TabButton iconName="user">Profile</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -33,43 +38,64 @@ export default function AppTabs() {
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+// Komponen Tombol Tab Biasa (Home & Profile)
+export function TabButton({
+  children,
+  isFocused,
+  iconName,
+  ...props
+}: TabTriggerSlotProps & { iconName: any }) {
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
-          {children}
-        </ThemedText>
-      </ThemedView>
+    <Pressable
+      {...props}
+      style={({ pressed }) => [styles.tabFlex, pressed && styles.pressed]}
+    >
+      <AntDesign
+        name={iconName}
+        size={24}
+        color={isFocused ? "#06B6D4" : "#64748B"}
+      />
+      <ThemedText
+        type="small"
+        style={{
+          marginTop: 4,
+          fontSize: 11,
+          fontWeight: isFocused ? "700" : "500",
+          color: isFocused ? "#06B6D4" : "#64748B",
+        }}
+      >
+        {children}
+      </ThemedText>
     </Pressable>
   );
 }
 
-export function CustomTabList(props: TabListProps) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+// Komponen Khusus Tombol Tambah Laporan di Tengah (Bulat & Menonjol)
+export function CenterAddButton({
+  isFocused,
+  iconName,
+  ...props
+}: TabTriggerSlotProps & { iconName: any }) {
+  return (
+    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
+      <View
+        style={[
+          styles.plusButtonInner,
+          { backgroundColor: isFocused ? "#0F172A" : "#06B6D4" },
+        ]}
+      >
+        <AntDesign name={iconName} size={28} color="white" />
+      </View>
+    </Pressable>
+  );
+}
 
+// Kontainer Utama yang Menempel di Pinggir Layar HP / Web bawah
+export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
-        </ThemedText>
-
         {props.children}
-
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
       </ThemedView>
     </View>
   );
@@ -77,39 +103,42 @@ export function CustomTabList(props: TabListProps) {
 
 const styles = StyleSheet.create({
   tabListContainer: {
-    position: 'absolute',
-    width: '100%',
-    padding: Spacing.three,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 0,
+    zIndex: 999,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderColor: "#E2E8F0",
   },
   innerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around", // Membagi rata Kiri, Tengah, Kanan
+    width: "100%",
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexGrow: 1,
-    gap: Spacing.two,
-    maxWidth: MaxContentWidth,
+    backgroundColor: "#FFFFFF",
   },
-  brandText: {
-    marginRight: 'auto',
+  tabFlex: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  plusButtonInner: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#06B6D4",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   pressed: {
     opacity: 0.7,
-  },
-  tabButtonView: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
-  },
-  externalPressable: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
   },
 });
