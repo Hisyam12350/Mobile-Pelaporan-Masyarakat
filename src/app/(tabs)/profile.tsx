@@ -9,6 +9,7 @@ import {
   Dimensions,
   Alert,
   StyleSheet,
+  TextInput,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // Perbaikan import
@@ -101,6 +102,42 @@ export default function ProfileTikTokStyle() {
 
     init();
   }, []);
+
+  async function handleEditUser() {
+    const token = await AsyncStorage.getItem("token");
+    const id = await AsyncStorage.getItem("id");
+
+    try {
+      const res = await fetch(API.userById(id!), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true",
+        },
+        body: JSON.stringify({
+          username: form.username,
+          email: form.email,
+          password: form.password,
+          nomor_telepon: form.nomor_telepon,
+          alamat: form.alamat,
+          bio: form.bio,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        Alert.alert("Berhasil!", "Profil berhasil diubah!");
+        setUsers({ ...users, ...form });
+        setEditOpen(false);
+      } else {
+        Alert.alert("Gagal", data.message || "Terjadi kesalahan");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Tidak dapat terhubung ke server");
+    }
+  }
 
   // Filter logic yang sudah diperbaiki dari state 'laporan'
   const filteredLaporan = laporan.filter((item) => {
@@ -329,6 +366,149 @@ export default function ProfileTikTokStyle() {
             ))
           )}
         </View>
+        {/* MODAL EDIT PROFILE */}
+        {editOpen && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 999,
+              padding: 20,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 24,
+                padding: 24,
+                width: "100%",
+                maxHeight: "85%",
+              }}
+            >
+              {/* Header Modal */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 20,
+                }}
+              >
+                <Text
+                  style={{ fontSize: 18, fontWeight: "800", color: "#0F172A" }}
+                >
+                  Edit Profil
+                </Text>
+                <TouchableOpacity onPress={() => setEditOpen(false)}>
+                  <AntDesign name="close" size={22} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Username */}
+                <Text style={styles.label}>Username</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.username}
+                  onChangeText={(t) => setForm({ ...form, username: t })}
+                  placeholder="Username"
+                />
+
+                {/* Email */}
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.email}
+                  onChangeText={(t) => setForm({ ...form, email: t })}
+                  placeholder="Email"
+                  keyboardType="email-address"
+                />
+
+                {/* Nomor Telepon */}
+                <Text style={styles.label}>Nomor Telepon</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.nomor_telepon}
+                  onChangeText={(t) => setForm({ ...form, nomor_telepon: t })}
+                  placeholder="Contoh: 0812..."
+                  keyboardType="phone-pad"
+                />
+
+                {/* Alamat */}
+                <Text style={styles.label}>Domisili</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.alamat}
+                  onChangeText={(t) => setForm({ ...form, alamat: t })}
+                  placeholder="Contoh: Jakarta Selatan"
+                />
+
+                {/* Bio */}
+                <Text style={styles.label}>Bio</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    { height: 80, textAlignVertical: "top" },
+                  ]}
+                  value={form.bio}
+                  onChangeText={(t) => setForm({ ...form, bio: t })}
+                  placeholder="Tulis bio singkat..."
+                  multiline
+                />
+
+                {/* Tombol Simpan */}
+                <TouchableOpacity
+                  onPress={handleEditUser}
+                  style={{
+                    backgroundColor: "#06B6D4",
+                    padding: 14,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    marginTop: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontWeight: "700",
+                      fontSize: 14,
+                    }}
+                  >
+                    Simpan Perubahan
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Tombol Batal */}
+                <TouchableOpacity
+                  onPress={() => setEditOpen(false)}
+                  style={{
+                    backgroundColor: "#F1F5F9",
+                    padding: 14,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    marginTop: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#64748B",
+                      fontWeight: "700",
+                      fontSize: 14,
+                    }}
+                  >
+                    Batal
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -425,5 +605,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 6,
+    marginTop: 14,
+  },
+  input: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: "#0F172A",
   },
 });
