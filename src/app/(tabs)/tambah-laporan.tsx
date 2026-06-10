@@ -87,13 +87,18 @@ export default function AddReportScreen() {
     formData.append("status", form.status);
 
     if (form.image) {
+      const uri = form.image.uri;
+      const filename = uri.split("/").pop() || "photo.jpg";
+      const ext = filename.split(".").pop()?.toLowerCase();
+      const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+
       formData.append("image", {
-        uri: form.image.uri,
-        name: form.image.fileName || "photo.jpg",
-        type: form.image.type || "image/jpeg", // Perbaikan dari mimeType ke type agar garis merah hilang
+        uri,
+        name: filename,
+        type: mimeType, // ← explicit set type
       } as any);
     }
-
+    
     const xhr = new XMLHttpRequest();
     xhr.open("POST", API.laporan);
     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
@@ -211,6 +216,7 @@ export default function AddReportScreen() {
                 <Image
                   source={{ uri: form.image.uri }}
                   style={styles.previewImage}
+                  contentFit="cover"
                 />
                 <View style={styles.changeImageOverlay}>
                   <AntDesign name={"camera" as any} size={16} color="white" />
@@ -366,7 +372,6 @@ const styles = StyleSheet.create({
   previewImage: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover",
   },
   changeImageOverlay: {
     position: "absolute",

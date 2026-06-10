@@ -1,6 +1,7 @@
 import { API, BASE_URL } from "@/constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
 import {
   ScrollView,
@@ -37,6 +38,20 @@ export default function HomeScreen() {
         return;
       }
 
+      try {
+        const payload: any = jwtDecode(token);
+        const isExpired = payload.exp * 1000 < Date.now();
+        if (isExpired) {
+          await AsyncStorage.clear();
+          router.replace("/login");
+          return;
+        }
+      } catch {
+        await AsyncStorage.clear();
+        router.replace("/login");
+        return;
+      }
+
       fetch(API.userById(userId || "undefined"), {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -48,12 +63,17 @@ export default function HomeScreen() {
       fetch(API.laporan, {
         headers: {
           Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true",
         },
       })
         .then((res) => res.json())
         .then((json) => {
-          setLaporan(json.data);
-        });
+          if (json?.data) {
+            const shuffled = [...json.data].sort(() => Math.random() - 0.5);
+            setLaporan(shuffled);
+          }
+        })
+        .catch((err) => console.log("Error laporan:", err));
     };
     fetchUserData();
   }, [id]);
@@ -258,146 +278,144 @@ export default function HomeScreen() {
 
         {/* --- LOOPING DATA KARTU LAPORAN --- */}
         <View style={{ gap: 20 }}>
-          {laporan
-            .sort(() => Math.random() - 0.5)
-            .map((item) => (
+          {laporan.map((item) => (
+            <View
+              key={item.id}
+              style={{
+                backgroundColor: "white",
+                borderRadius: 24,
+                overflow: "hidden",
+                borderWidth: 1,
+                borderColor: "#E2E8F0",
+                shadowColor: "#0F172A",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.04,
+                shadowRadius: 12,
+                elevation: 2,
+              }}
+            >
+              {/* Container Image */}
               <View
-                key={item.id}
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: 24,
-                  overflow: "hidden",
-                  borderWidth: 1,
-                  borderColor: "#E2E8F0",
-                  shadowColor: "#0F172A",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.04,
-                  shadowRadius: 12,
-                  elevation: 2,
-                }}
+                style={{ height: 180, width: "100%", position: "relative" }}
               >
-                {/* Container Image */}
+                <Image
+                  source={{
+                    uri: API.gambar(item.gambar),
+                  }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
                 <View
-                  style={{ height: 180, width: "100%", position: "relative" }}
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    left: 12,
+                    backgroundColor: "#06B6D4",
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                  }}
                 >
-                  <Image
-                    source={{
-                      uri: API.gambar(item.gambar),
-                    }}
-                    style={{ width: "100%", height: "100%" }}
-                    resizeMode="cover"
-                  />
-                  <View
+                  <Text
                     style={{
-                      position: "absolute",
-                      top: 12,
-                      left: 12,
-                      backgroundColor: "#06B6D4",
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 8,
+                      color: "white",
+                      fontSize: 9,
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: "white",
-                        fontSize: 9,
-                        fontWeight: "900",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {item.nama_kategori}
-                    </Text>
-                  </View>
+                    {item.nama_kategori}
+                  </Text>
                 </View>
+              </View>
 
-                {/* Konten Kartu */}
-                <View style={{ padding: 20 }}>
+              {/* Konten Kartu */}
+              <View style={{ padding: 20 }}>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: "#94A3B8",
+                    fontWeight: "700",
+                    marginBottom: 6,
+                  }}
+                >
+                  👤 User #{item.id_user}
+                </Text>
+
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "800",
+                    color: "#0F172A",
+                    lineHeight: 22,
+                  }}
+                  numberOfLines={2}
+                >
+                  {item.judul}
+                </Text>
+
+                {/* Info Lokasi & Tanggal */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: 14,
+                    borderTopWidth: 1,
+                    borderColor: "#F1F5F9",
+                    paddingTop: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: "#64748B",
+                      fontWeight: "600",
+                    }}
+                  >
+                    📍 {item.lokasi}
+                  </Text>
                   <Text
                     style={{
                       fontSize: 11,
                       color: "#94A3B8",
-                      fontWeight: "700",
-                      marginBottom: 6,
+                      fontStyle: "italic",
                     }}
                   >
-                    👤 User #{item.id_user}
+                    {new Date(item.create_at).toLocaleDateString("id-ID")}
                   </Text>
+                </View>
 
+                {/* Tombol Detail */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    router.push(`/detailLaporan/${item.id}` as any);
+                  }}
+                  style={{
+                    backgroundColor: "#F8FAFC",
+                    borderWidth: 1,
+                    borderColor: "#E2E8F0",
+                    borderRadius: 12,
+                    paddingVertical: 12,
+                    alignItems: "center",
+                    marginTop: 16,
+                  }}
+                >
                   <Text
                     style={{
-                      fontSize: 16,
-                      fontWeight: "800",
-                      color: "#0F172A",
-                      lineHeight: 22,
+                      color: "#475569",
+                      fontSize: 13,
+                      fontWeight: "700",
                     }}
-                    numberOfLines={2}
                   >
-                    {item.judul}
+                    Detail Laporan
                   </Text>
-
-                  {/* Info Lokasi & Tanggal */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginTop: 14,
-                      borderTopWidth: 1,
-                      borderColor: "#F1F5F9",
-                      paddingTop: 12,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: "#64748B",
-                        fontWeight: "600",
-                      }}
-                    >
-                      📍 {item.lokasi}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        color: "#94A3B8",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      {new Date(item.create_at).toLocaleDateString("id-ID")}
-                    </Text>
-                  </View>
-
-                  {/* Tombol Detail */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      router.push(`/detailLaporan/${item.id}` as any);
-                    }}
-                    style={{
-                      backgroundColor: "#F8FAFC",
-                      borderWidth: 1,
-                      borderColor: "#E2E8F0",
-                      borderRadius: 12,
-                      paddingVertical: 12,
-                      alignItems: "center",
-                      marginTop: 16,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#475569",
-                        fontSize: 13,
-                        fontWeight: "700",
-                      }}
-                    >
-                      Detail Laporan
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               </View>
-            ))}
+            </View>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -16,7 +16,8 @@ export const API = {
   laporanById: (id: string) => `${BASE_URL}/api/laporan/${id}`,
   laporanByUser: (id: string) => `${BASE_URL}/api/laporan/user/${id}`,
   laporanTotal: `${BASE_URL}/api/laporan/total`,
-  laporanTotalByUser: (id: string) => `${BASE_URL}/api/laporan/total/user/${id}`,
+  laporanTotalByUser: (id: string) =>
+    `${BASE_URL}/api/laporan/total/user/${id}`,
   laporanStatistik: `${BASE_URL}/api/laporan/statistik`,
 
   // Kategori
